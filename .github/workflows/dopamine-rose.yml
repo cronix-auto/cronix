@@ -1,0 +1,73 @@
+name: Dopamine Rose iOS 15 IPA
+on:
+  push:
+    branches: [dopamine-rose-build]
+    paths:
+      - "dopamine-rose/**"
+      - ".github/workflows/dopamine-rose.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ios15:
+    runs-on: macos-15
+    timeout-minutes: 110
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Clone Dopamine upstream
+        run: git clone --depth 1 --branch 3.x --recurse-submodules --shallow-submodules https://github.com/opa334/Dopamine.git source
+      - name: Apply original Rose artwork and UIKit styling
+        run: |
+          python3 -m pip install --user --break-system-packages pillow
+          cp dopamine-rose/customize.py source/customize.py
+          cd source
+          python3 customize.py
+      - name: Install Procursus
+        uses: dhinakg/procursus-action@main
+        with:
+          packages: ldid findutils sed coreutils make
+      - name: GNU Make
+        run: |
+          brew install make libarchive
+          echo "PATH=$(brew --prefix make)/libexec/gnubin:$PATH" >> "$GITHUB_ENV"
+      - name: Install Theos and SDK
+        run: |
+          set -eux
+          cd source
+          export BASEDIR="$(pwd)"
+          export THEOS="$BASEDIR/theos"
+          mkdir -p "$THEOS"
+          curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos > install-theos.sh
+          gsed -E "/^\s*get_theos\s*$/,+1 s/^(\s*)(get_sdks)\s*$/\1mkdir -p \${THEOS}\/sdks\n\1touch \${THEOS}\/sdks\/sdk\n\1\2/g" -i install-theos.sh
+          bash install-theos.sh
+          curl -fL https://github.com/theos/sdks/releases/latest/download/iPhoneOS16.5.sdk.tar.xz -o "$THEOS/sdks/iPhoneOS16.5.sdk.tar.xz"
+          tar -xJf "$THEOS/sdks/iPhoneOS16.5.sdk.tar.xz" -C "$THEOS/sdks"
+      - name: Compile trustcache
+        run: |
+          set -eux
+          git clone --depth 1 https://github.com/CRKatri/trustcache
+          cd trustcache
+          export CFLAGS="$CFLAGS -I$(brew --prefix openssl)/include -arch arm64"
+          export LDFLAGS="$LDFLAGS -L$(brew --prefix openssl)/lib -arch arm64"
+          gmake -j$(sysctl -n hw.logicalcpu) OPENSSL=1
+          sudo cp trustcache /opt/procursus/bin/
+      - name: Fetch bootstrap
+        run: cd source/Application/Dopamine/Resources && ./download_bootstraps.sh
+      - name: Build ad-hoc IPA
+        run: |
+          cd source
+          export BASEDIR="$(pwd)"
+          export THEOS="$BASEDIR/theos"
+          gmake -j$(sysctl -n hw.logicalcpu)
+          test -s Application/Dopamine.ipa
+          cp Application/Dopamine.ipa ../DopamineRose-iPhone6s-iOS15.ipa
+          shasum -a 256 ../DopamineRose-iPhone6s-iOS15.ipa
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DopamineRose-iPhone6s-iOS15
+          path: DopamineRose-iPhone6s-iOS15.ipa
+          if-no-files-found: error
