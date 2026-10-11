@@ -1,4 +1,4 @@
-name: Dopamine Rose iOS 15 IPA
+name: Dopamine Rose v2 iOS 15 IPA
 on:
   push:
     branches: [dopamine-rose-build]
@@ -19,13 +19,18 @@ jobs:
         with:
           xcode-version: latest-stable
       - name: Clone Dopamine upstream
-        run: git clone --depth 1 --branch 3.x --recurse-submodules --shallow-submodules https://github.com/opa334/Dopamine.git source
-      - name: Apply original Rose artwork and UIKit styling
+        run: |
+          git clone --depth 1 --branch 3.x https://github.com/opa334/Dopamine.git source
+          cd source
+          git fetch --depth 1 origin 1a54e76d515ff5916b64e44d6afbb57d2bc89ee9
+          git checkout 1a54e76d515ff5916b64e44d6afbb57d2bc89ee9
+          git submodule update --init --recursive --depth 1
+      - name: Install replacement Rose frontend and supplied artwork
         run: |
           python3 -m pip install --user --break-system-packages pillow
-          cp dopamine-rose/customize.py source/customize.py
           cd source
-          python3 customize.py
+          python3 ../dopamine-rose/customize-v2.py
+          git diff --exit-code -- Dopamine.entitlements BaseBin Packages Standalone Application/Dopamine/Jailbreak Application/Dopamine/Exploits Application/Dopamine/Dopamine.entitlements
       - name: Install Procursus
         uses: dhinakg/procursus-action@main
         with:
@@ -64,10 +69,17 @@ jobs:
           export THEOS="$BASEDIR/theos"
           gmake -j$(sysctl -n hw.logicalcpu)
           test -s Application/Dopamine.ipa
-          cp Application/Dopamine.ipa ../DopamineRose-iPhone6s-iOS15.ipa
-          shasum -a 256 ../DopamineRose-iPhone6s-iOS15.ipa
+          cp Application/Dopamine.ipa ../DopamineRose-v2-iPhone6s-iOS15.ipa
+          shasum -a 256 ../DopamineRose-v2-iPhone6s-iOS15.ipa
+          ldid -e Application/build/Build/Products/Debug-iphoneos/Dopamine.app/Dopamine > ../packaged-entitlements.plist
+          xcrun assetutil --info Application/build/Build/Products/Debug-iphoneos/Dopamine.app/Assets.car > ../asset-report.json
+          python3 ../dopamine-rose/verify-package.py ../DopamineRose-v2-iPhone6s-iOS15.ipa
       - uses: actions/upload-artifact@v4
         with:
-          name: DopamineRose-iPhone6s-iOS15
-          path: DopamineRose-iPhone6s-iOS15.ipa
+          name: DopamineRose-v2-iPhone6s-iOS15
+          path: |
+            DopamineRose-v2-iPhone6s-iOS15.ipa
+            packaged-entitlements.plist
+            asset-report.json
           if-no-files-found: error
+
