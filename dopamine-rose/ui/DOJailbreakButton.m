@@ -77,6 +77,7 @@
         self.backgroundColor = RosePink(); self.layer.cornerRadius = 4;
         self.button = [DOActionMenuButton buttonWithAction:action chevron:NO];
         UIButtonConfiguration *config = [UIButtonConfiguration plainButtonConfiguration];
+        config.title = action.title; config.image = action.image;
         config.baseForegroundColor = RoseInk(); config.imagePadding = 12;
         config.imagePlacement = NSDirectionalRectEdgeTrailing;
         config.titleTextAttributesTransformer = ^NSDictionary *(NSDictionary *attributes) {
@@ -144,8 +145,12 @@
     }
     [parent layoutIfNeeded];
 }
-- (void)setEnabled:(BOOL)enabled { self.button.enabled = enabled; self.alpha = enabled ? 1 : 0.5; }
-- (BOOL)isEnabled { return self.button.enabled; }
+- (void)setEnabled:(BOOL)enabled {
+    self.button.userInteractionEnabled = enabled;
+    self.button.accessibilityTraits = enabled ? UIAccessibilityTraitButton : UIAccessibilityTraitButton | UIAccessibilityTraitNotEnabled;
+    self.alpha = enabled ? 1 : 0.65;
+}
+- (BOOL)isEnabled { return self.button.userInteractionEnabled; }
 - (void)lockMutex { pthread_mutex_lock(&_canStartJailbreak); }
 - (void)unlockMutex { pthread_mutex_unlock(&_canStartJailbreak); }
 - (void)dealloc { pthread_mutex_destroy(&_canStartJailbreak); }

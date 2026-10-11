@@ -10,7 +10,7 @@ with zipfile.ZipFile(ipa) as archive:
     assert info['CFBundleDisplayName'] == 'Dopamine Rose'
     binary = archive.read(root + 'Dopamine')
     assert len(binary) > 100000
-    assert b'Quiet power.' in binary
+    assert b'Rose.' in binary
     assert b'RoseProgressView' in binary
     assert b'RoseLibraryController' in binary
     assert len(archive.read(root + 'Assets.car')) > 10000

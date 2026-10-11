@@ -43,7 +43,7 @@
 @end
 @implementation RoseLibraryController
 - (instancetype)initWithPage:(NSInteger)page {
-    if ((self = [super initWithStyle:UITableViewStyleInsetGrouped])) self.page = page;
+    if ((self = [super initWithStyle:UITableViewStyleGrouped])) self.page = page;
     return self;
 }
 - (void)viewDidLoad {
@@ -61,12 +61,12 @@
 }
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
     if (self.page == 2) return @"Restart operations require an active Dopamine jailbreak. Bootstrap maintenance and removal retain Dopamine's original checks and confirmation steps in Settings.";
-    if (self.page == 1) return @"Compatibility is evaluated by Dopamine's exploit manager. A supported device does not guarantee that a jailbreak attempt will succeed.";
-    return @"Rose v2 · Native UIKit\nPowered by Dopamine by opa334 and its contributors. Contributor credits and component licenses are preserved in Credits. Character artwork supplied by the user; Majin Buu belongs to its respective rights holders.";
+    if (self.page == 1) return @"Compatibility evaluated by the current Dopamine engine.";
+    return @"Rose v2\nDopamine by opa334 and contributors.\nArtwork supplied by the user. Majin Buu belongs to its respective rights holders. Full component attribution and licenses in Credits.";
 }
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:nil];
-    cell.backgroundColor = [UIColor colorWithWhite:0.065 alpha:1];
+    cell.backgroundColor = RoseInk();
     cell.textLabel.textColor = [UIColor whiteColor];
     cell.textLabel.font = [UIFont systemFontOfSize:17 weight:UIFontWeightMedium];
     cell.textLabel.numberOfLines = 0;
@@ -165,6 +165,13 @@
         UIButtonConfiguration *config = [UIButtonConfiguration plainButtonConfiguration];
         config.title = titles[i]; config.image = [UIImage systemImageNamed:icons[i]];
         config.imagePadding = 7; config.baseForegroundColor = i == 1 ? RosePink() : RoseMuted();
+        config.preferredSymbolConfigurationForImage = [UIImageSymbolConfiguration configurationWithPointSize:17 weight:UIImageSymbolWeightRegular];
+        config.titleLineBreakMode = NSLineBreakByClipping;
+        config.titleTextAttributesTransformer = ^NSDictionary *(NSDictionary *attributes) {
+            NSMutableDictionary *result = attributes.mutableCopy;
+            result[NSFontAttributeName] = [UIFont systemFontOfSize:13 weight:UIFontWeightMedium];
+            return result;
+        };
         UIButton *button = [UIButton buttonWithConfiguration:config primaryAction:nil];
         button.tag = i; [button addTarget:self action:@selector(openPage:) forControlEvents:UIControlEventTouchUpInside];
         [self.footer addArrangedSubview:button];
@@ -190,9 +197,9 @@
         [self.homeStack.trailingAnchor constraintEqualToAnchor:scroll.contentLayoutGuide.trailingAnchor constant:-28],
         [self.homeStack.widthAnchor constraintEqualToAnchor:scroll.frameLayoutGuide.widthAnchor constant:-56]
     ]];
-    UILabel *eyebrow = RoseLabel(@"D O P A M I N E   /   R O S E  V 2", 10, UIFontWeightSemibold, RoseGold());
+    UILabel *eyebrow = RoseLabel(@"D O P A M I N E   /   E D I T I O N  I I", 10, UIFontWeightSemibold, RoseGold());
     [self.homeStack addArrangedSubview:eyebrow];
-    UILabel *wordmark = RoseLabel(@"Quiet power.", 43, UIFontWeightRegular, [UIColor colorWithWhite:0.94 alpha:1]);
+    UILabel *wordmark = RoseLabel(@"Rose.", 43, UIFontWeightRegular, [UIColor colorWithWhite:0.94 alpha:1]);
     UIFontDescriptor *serif = [[UIFont systemFontOfSize:43].fontDescriptor fontDescriptorWithDesign:UIFontDescriptorSystemDesignSerif];
     wordmark.font = [[UIFontMetrics metricsForTextStyle:UIFontTextStyleLargeTitle] scaledFontForFont:[UIFont fontWithDescriptor:serif size:43]];
     [self.homeStack addArrangedSubview:wordmark];
@@ -262,7 +269,7 @@
     DOEnvironmentManager *env = [DOEnvironmentManager sharedManager];
     BOOL other = env.isJailbrokenWithOtherJailbreak;
     BOOL remove = [[DOPreferenceManager sharedManager] boolPreferenceValueForKey:@"removeJailbreakEnabled" fallback:NO];
-    self.stateLabel.text = env.isJailbroken ? @"You're already free." : other ? @"Another jailbreak is active." : !env.isSupported ? @"Outside compatibility." : remove ? @"Removal is selected." : @"Ready when you are.";
+    self.stateLabel.text = env.isJailbroken ? @"Jailbreak active." : other ? @"Another jailbreak is active." : !env.isSupported ? @"Device not supported." : remove ? @"Removal is selected." : @"Ready when you are.";
     self.detailLabel.text = [NSString stringWithFormat:@"iOS %@ · %@\n%@", UIDevice.currentDevice.systemVersion, env.isArm64e ? @"ARM64e" : @"ARM64", remove ? @"The next operation removes the jailbreak." : env.isJailbroken ? @"Dopamine is active on this device." : env.isSupported && !other ? @"Your device passes Dopamine's compatibility checks." : @"Open Device for the current system state."];
     [self.jailbreakBtn.button setTitle:remove ? @"Remove jailbreak" : env.isJailbroken ? @"Jailbreak active" : !env.isSupported || other ? @"Jailbreak unavailable" : @"Begin jailbreak" forState:UIControlStateNormal];
     self.jailbreakBtn.enabled = env.isSupported && !env.isJailbroken && !other && !self.operationStarted;

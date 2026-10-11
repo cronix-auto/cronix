@@ -2,7 +2,7 @@ name: Rose native UI preview
 on:
   push:
     branches: [dopamine-rose-build]
-    paths: [dopamine-rose/preview.py, .github/workflows/rose-preview.yml]
+    paths: [dopamine-rose/preview.py, dopamine-rose/ui/**, .github/workflows/rose-preview.yml]
   workflow_dispatch:
 permissions:
   contents: read
