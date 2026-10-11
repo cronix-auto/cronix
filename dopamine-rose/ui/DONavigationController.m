@@ -19,6 +19,8 @@
     self.delegate = self;
 }
 - (void)navigationController:(UINavigationController *)navigationController willShowViewController:(UIViewController *)viewController animated:(BOOL)animated {
+    // Retained maintenance controllers position headers from their view's top edge.
+    viewController.edgesForExtendedLayout = UIRectEdgeNone;
     [self setNavigationBarHidden:[viewController isKindOfClass:DOMainViewController.class] animated:animated];
     viewController.navigationItem.backButtonTitle = @"Rose";
 }
