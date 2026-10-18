@@ -1,0 +1,85 @@
+name: Cronix iOS 15 IPA
+on:
+  push:
+    branches: [cronix-blueprint-build]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 100
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Clone pristine upstream release
+        run: |
+          git clone --depth 1 --branch 3.0.11 https://github.com/opa334/Dopamine.git source
+          test "$(git -C source rev-parse HEAD)" = 448ff1a83d2bb807346f1f3d36332e4afbf9794a
+          git -C source submodule update --init --recursive --depth 1
+      - name: Compile and render shared native UI
+        run: bash preview.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Cronix-UI-Previews
+          path: previews/*.png
+      - name: Apply Cronix frontend
+        run: |
+          python3 -m pip install --user --break-system-packages pillow
+          python3 customize.py source
+          git -C source diff --exit-code -- BaseBin Packages Standalone Application/Dopamine/Jailbreak Application/Dopamine/Exploits Application/Dopamine/Dopamine.entitlements
+      - name: Install Procursus
+        uses: dhinakg/procursus-action@main
+        with:
+          packages: ldid findutils sed coreutils make
+      - name: Install GNU Make
+        run: |
+          brew install make libarchive
+          echo "PATH=$(brew --prefix make)/libexec/gnubin:$PATH" >> "$GITHUB_ENV"
+      - name: Install Theos and SDK
+        run: |
+          set -eux
+          cd source
+          export BASEDIR="$(pwd)"
+          export THEOS="$BASEDIR/theos"
+          mkdir -p "$THEOS"
+          curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos > install-theos.sh
+          gsed -E "/^\s*get_theos\s*$/,+1 s/^(\s*)(get_sdks)\s*$/\1mkdir -p \${THEOS}\/sdks\n\1touch \${THEOS}\/sdks\/sdk\n\1\2/g" -i install-theos.sh
+          bash install-theos.sh
+          curl -fL https://github.com/theos/sdks/releases/latest/download/iPhoneOS16.5.sdk.tar.xz -o "$THEOS/sdks/iPhoneOS16.5.sdk.tar.xz"
+          tar -xJf "$THEOS/sdks/iPhoneOS16.5.sdk.tar.xz" -C "$THEOS/sdks"
+      - name: Build trustcache
+        run: |
+          git clone --depth 1 https://github.com/CRKatri/trustcache
+          cd trustcache
+          export CFLAGS="${CFLAGS:-} -I$(brew --prefix openssl)/include -arch arm64"
+          export LDFLAGS="${LDFLAGS:-} -L$(brew --prefix openssl)/lib -arch arm64"
+          gmake -j$(sysctl -n hw.logicalcpu) OPENSSL=1
+          sudo cp trustcache /opt/procursus/bin/
+      - name: Download bootstrap
+        run: cd source/Application/Dopamine/Resources && ./download_bootstraps.sh
+      - name: Compile and verify Cronix IPA
+        run: |
+          cd source
+          export BASEDIR="$(pwd)"
+          export THEOS="$BASEDIR/theos"
+          gmake -j$(sysctl -n hw.logicalcpu)
+          cp Application/Dopamine.ipa ../Cronix.ipa
+          ldid -e Application/build/Build/Products/Debug-iphoneos/Dopamine.app/Dopamine > ../entitlements.plist
+          cd ..
+          python3 verify-package.py Cronix.ipa
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Cronix-build-evidence
+          path: |
+            verification.json
+            entitlements.plist
+            source/Application/build/Logs/Build/*.xcactivitylog
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Cronix-IPA
+          path: Cronix.ipa
+          if-no-files-found: error
