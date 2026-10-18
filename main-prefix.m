@@ -58,24 +58,14 @@
 }
 - (void)requestJailbreak {
     if (self.started || !self.home.jailbreakButton.enabled) return;
-    if (![DOUIManager sharedInstance].enabledPackageManagerKeys.count) {
-        UIAlertController *picker = [UIAlertController alertControllerWithTitle:@"Package Manager" message:@"Choose a package manager for the bootstrap." preferredStyle:UIAlertControllerStyleAlert];
-        for (NSDictionary *manager in [DOUIManager sharedInstance].availablePackageManagers) {
-            [picker addAction:[UIAlertAction actionWithTitle:manager[@"Display Name"] style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
-                [[DOUIManager sharedInstance] setPackageManager:manager[@"Key"] enabled:YES];
-                [self beginJailbreak];
-            }]];
-        }
-        [picker addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
-        [self presentViewController:picker animated:YES completion:nil];
-        return;
-    }
     [self beginJailbreak];
 }
 - (void)beginJailbreak {
     if (self.started) return;
     self.started = YES;
     self.home.jailbreakButton.enabled = NO;
+    // The bootstrap is still required. Installing a package-manager app is not.
+    [[DOUIManager sharedInstance] resetPackageManagers];
     UIApplication.sharedApplication.idleTimerDisabled = YES;
     [self.jailbreakBtn expandButton:@[]];
     [self startJailbreak];
@@ -98,13 +88,6 @@
             }
         } copy]};
     };
-    NSMutableArray *managers = [NSMutableArray new];
-    for (NSDictionary *manager in [DOUIManager sharedInstance].availablePackageManagers) {
-        NSString *key = manager[@"Key"];
-        [managers addObject:@{@"title":manager[@"Display Name"], @"on":@([[DOUIManager sharedInstance].enabledPackageManagerKeys containsObject:key]), @"toggle":[^(BOOL on) {
-            [[DOUIManager sharedInstance] setPackageManager:key enabled:on];
-        } copy]}];
-    }
     NSMutableArray *recovery = [NSMutableArray new];
     if ([DOEnvironmentManager sharedManager].isJailbroken) {
         [recovery addObject:@{@"title":@"Restart SpringBoard", @"action":[^{
@@ -121,10 +104,10 @@
             [weakSelf.navigationController popToRootViewControllerAnimated:YES];
         }];
     } copy]}];
-    settings.headings = @[@"General", @"Package Managers", @"Recovery", @"About"];
+    settings.headings = @[@"General", @"Recovery", @"About"];
     settings.groups = @[
         @[@{@"title":@"Appearance", @"value":@"Light"}, toggle(@"Tweak Injection", @"tweakInjectionEnabled", YES), toggle(@"Verbose Logs", @"verboseLogsEnabled", NO), @{@"title":@"View Logs", @"action":[^{ [weakSelf openLogs]; } copy]}],
-        managers, recovery,
+        recovery,
         @[@{@"title":@"Cronix", @"value":@"1.0"}, @{@"title":@"Dopamine Engine", @"value":@"3.0.11"}, @{@"title":@"Licences", @"action":[^{
             CXLogsController *licences = [CXLogsController new];
             licences.title = @"Licences";

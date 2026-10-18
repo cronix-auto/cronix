@@ -5,6 +5,9 @@ SDK=$(xcrun --sdk iphonesimulator --show-sdk-path)
 xcrun --sdk iphonesimulator clang -fobjc-arc -fmodules -isysroot "$SDK" \
   -target arm64-apple-ios15.0-simulator -framework UIKit -framework Foundation -framework QuartzCore \
   -I. preview.m -o preview-app/CronixPreview.app/CronixPreview
+if [ "${1:-}" = "--compile-only" ]; then
+  exit 0
+fi
 python3 - <<'PY'
 import plistlib
 from pathlib import Path

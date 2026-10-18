@@ -9,3 +9,5 @@ The build clones pristine upstream source, replaces only frontend files and laun
 Preview screenshots use the actual shared native UI components in a simulator fixture. Preview activity messages are sample data used only by that fixture, which is not included in the IPA. Production activity is populated by real Dopamine log events and has no estimated percentage.
 
 The resulting app is ad-hoc signed with jailbreak entitlements for installation through TrollStore on a supported device. An Apple development certificate is not provided. A successful build and simulator render do not establish successful physical-device jailbreak execution.
+
+Cronix has no package-manager picker or management pages. It clears its enabled package-manager selection before running the engine, so the upstream bootstrap can initialize without installing Sileo or Zebra. Existing installed package-manager apps are not removed.

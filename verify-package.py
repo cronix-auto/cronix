@@ -22,6 +22,11 @@ with zipfile.ZipFile(path) as archive:
     assert any(n.endswith('/basebin.tar') for n in names), 'Missing jailbreak basebin'
     assert any(n.endswith('/LICENSE.md') for n in names), 'Missing upstream licence'
     assert any(n.endswith('/Assets.car') for n in names), 'Missing compiled artwork'
+    entitlements = Path('entitlements.plist')
+    if entitlements.exists():
+        expected = plistlib.loads(Path('source/Application/Dopamine/Dopamine.entitlements').read_bytes())
+        actual = plistlib.loads(entitlements.read_bytes())
+        assert actual == expected, 'Signed entitlements differ from upstream'
     report = {
         'name':info['CFBundleDisplayName'], 'bundle_id':info['CFBundleIdentifier'],
         'minimum_ios':info['MinimumOSVersion'], 'engine_version':info['CFBundleShortVersionString'],

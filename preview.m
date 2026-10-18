@@ -19,11 +19,10 @@
         CXSettingsController *settings = [CXSettingsController new];
         settings.groups = @[
             @[@{@"title":@"Appearance", @"value":@"Light"}, @{@"title":@"Tweak Injection", @"toggle":[^(BOOL value) {} copy], @"on":@YES}, @{@"title":@"Verbose Logs", @"toggle":[^(BOOL value) {} copy], @"on":@NO}, @{@"title":@"View Logs", @"action":[^{} copy]}],
-            @[@{@"title":@"Sileo", @"toggle":[^(BOOL value) {} copy], @"on":@YES}, @{@"title":@"Zebra", @"toggle":[^(BOOL value) {} copy], @"on":@NO}],
             @[@{@"title":@"Remove Jailbreak", @"value":@"Off", @"destructive":@YES, @"action":[^{} copy]}],
             @[@{@"title":@"Cronix", @"value":@"1.0"}, @{@"title":@"Dopamine Engine", @"value":@"3.0.11"}, @{@"title":@"Licences", @"action":[^{} copy]}]
         ];
-        settings.headings = @[@"General", @"Package Managers", @"Recovery", @"About"];
+        settings.headings = @[@"General", @"Recovery", @"About"];
         root = settings;
     } else if ([mode isEqualToString:@"logs"]) {
         CXLogsController *logs = [CXLogsController new];
