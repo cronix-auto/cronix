@@ -45,13 +45,16 @@
     self.window.rootViewController = nav;
     [self.window makeKeyAndVisible];
 
-    UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:CGSizeMake(1024, 1024) format:({ UIGraphicsImageRendererFormat *f = [UIGraphicsImageRendererFormat new]; f.scale = 1; f.opaque = YES; f; })];
-    UIImage *icon = [renderer imageWithActions:^(UIGraphicsImageRendererContext *context) {
-        [CXBackground() setFill]; UIRectFill(CGRectMake(0, 0, 1024, 1024));
-        CXDrawEye(CGRectMake(150, 275, 724, 453));
-    }];
-    NSString *path = [NSHomeDirectory() stringByAppendingPathComponent:@"Documents/CronixIcon.png"];
-    [UIImagePNGRepresentation(icon) writeToFile:path atomically:YES];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+        [self.window layoutIfNeeded];
+        UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:self.window.bounds.size];
+        UIImage *render = [renderer imageWithActions:^(UIGraphicsImageRendererContext *context) {
+            [self.window drawViewHierarchyInRect:self.window.bounds afterScreenUpdates:YES];
+        }];
+        NSString *path = [NSHomeDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"Documents/render-%@.png", mode]];
+        [UIImagePNGRepresentation(render) writeToFile:path atomically:YES];
+        NSLog(@"CRONIX_PREVIEW_RENDERED %@", mode);
+    });
     return YES;
 }
 @end
